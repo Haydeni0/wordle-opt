@@ -72,7 +72,7 @@ def playWordle(bestWord: Callable, target_word_idx: int):
     return game_result
 
 
-def algScore(bestWord, num_words=20):
+def algScoreSerial(bestWord, num_words=20):
     # Play wordle with the chosen bestWord word choice algorithm
     # Return the total score for all games (lower is better)
 
@@ -80,10 +80,6 @@ def algScore(bestWord, num_words=20):
     num_forfeited = 0
     for target_word_idx in range(min(num_words, num_answers)):
         result = playWordle(bestWord, target_word_idx)
-
-        # print(result["num_guesses"])
-        # print(result["guesses"])
-        # print(word_answers[target_word_idx])
 
         if result["num_guesses"] > g_max_guesses:
             num_forfeited += 1
@@ -94,7 +90,7 @@ def algScore(bestWord, num_words=20):
 import multiprocessing as mp
 
 
-def algScoreParpoolMap(bestWord, num_words=20):
+def algScore(bestWord, num_words=20):
     # Play wordle with the chosen bestWord word choice algorithm
     # Return the total score for all games (lower is better)
 
@@ -106,28 +102,14 @@ def algScoreParpoolMap(bestWord, num_words=20):
 
     num_guesses = [a["num_guesses"] for a in result]
 
+    for j in range(len(num_guesses)):
+        if num_guesses[j] > g_max_guesses:
+            num_guesses[j] = 0
+            num_forfeited += 1
+        
     score = sum(num_guesses)
     return score, num_forfeited
 
-def algScoreParpool(bestWord, num_words=20):
-    # Play wordle with the chosen bestWord word choice algorithm
-    # Return the total score for all games (lower is better)
-
-    score = 0
-    num_forfeited = 0
-    
-    with mp.Pool(16) as pool:
-        num_guesses = []
-        for j in range(num_words):
-            result = pool.apply_async(playWordle, args = (bestWord, j))
-            num_guesses.append(result.get()["num_guesses"])
-            # result = pool.apply(playWordle, args = (bestWord, j))
-            # num_guesses.append(result["num_guesses"])
-    
-    pool.join()
-
-    score = sum(num_guesses)
-    return score, num_forfeited
         
 
 
