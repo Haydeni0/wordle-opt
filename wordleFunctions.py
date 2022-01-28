@@ -1,8 +1,5 @@
+from debugpy import trace_this_thread
 import numpy as np
-import pandas as pd
-import collections
-import time
-
 from typing import Callable
 
 from getWords import *
@@ -29,7 +26,8 @@ def wordle(target_word_idx: int, guess: str) -> dict:
 
     correct_locations = [target_letters[j] ==
                          guess_letters[j] for j in range(5)]
-    correct_letter_locations = [(guess_letters[j] if (target_letters[j] == guess_letters[j]) else "") for j in range(5)]
+    correct_letter_locations = [(guess_letters[j] if (
+        target_letters[j] == guess_letters[j]) else "") for j in range(5)]
 
     correct_letters = set(target_letters).intersection(set(guess_letters))
 
@@ -44,6 +42,8 @@ def wordle(target_word_idx: int, guess: str) -> dict:
 
 
 g_max_guesses = 100
+
+
 def playWordle(bestWord: Callable, target_word_idx: int):
     # Play the wordle game using a function that returns the best word to use
     banned_letters = set()
@@ -62,35 +62,37 @@ def playWordle(bestWord: Callable, target_word_idx: int):
             break
         elif num_guesses > g_max_guesses:
             break
-        
+
         banned_letters = banned_letters.union(result["incorrect_letters"])
         banned_words = banned_words.union([best_word])
         correct_letters = correct_letters.union(result["correct_letters"])
-    
-    return num_guesses
+
+    game_result = {"num_guesses": num_guesses, "guesses": guesses, "banned_letters": banned_letters,
+                   "banned_words": banned_words, "correct_letters": correct_letters}
+    return game_result
 
 
-
-def algScore(bestWord, num_words = 20):
+def algScore(bestWord, num_words=20):
     # Play wordle with the chosen bestWord word choice algorithm
     # Return the total score for all games (lower is better)
-    
+
     score = 0
     num_forfeited = 0
     for target_word_idx in range(min(num_words, num_answers)):
-        num_guesses = playWordle(bestWord, target_word_idx)
+        result = playWordle(bestWord, target_word_idx)
 
-        if num_guesses > g_max_guesses:
+        # print(result["num_guesses"])
+        # print(result["guesses"])
+        # print(word_answers[target_word_idx])
+
+        if result["num_guesses"] > g_max_guesses:
             num_forfeited += 1
         else:
-            score += num_guesses
-
+            score += result["num_guesses"]
     return score, num_forfeited
+
 
 if __name__ == "__main__":
     target_word_idx = 1245
     print(f"{word_answers[target_word_idx]}")
     wordle(target_word_idx, "medal")
-
-
-    
