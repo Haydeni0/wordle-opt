@@ -23,12 +23,12 @@ def process(n):
 
 @timing
 def parpool(n):
-    with mp.Pool(16) as pool:
+    with mp.Pool(mp.cpu_count()) as pool:
         pool.map(f, range(n))
 
 @timing
 def parpoolApply(n):
-    with mp.Pool(16) as pool:
+    with mp.Pool(mp.cpu_count()) as pool:
         for j in range(n):
             pool.apply(f, (j,))
 

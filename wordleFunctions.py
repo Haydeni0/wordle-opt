@@ -78,7 +78,10 @@ def algScoreSerial(bestWord, num_words=20):
 
     score = 0
     num_forfeited = 0
-    for target_word_idx in range(min(num_words, num_answers)):
+    np.random.seed(0)
+    target_word_idxs = np.random.choice(range(num_answers), size = min(num_words, num_answers), replace=False)
+
+    for target_word_idx in target_word_idxs:
         result = playWordle(bestWord, target_word_idx)
 
         if result["num_guesses"] > g_max_guesses:
@@ -97,8 +100,11 @@ def algScore(bestWord, num_words=20):
     score = 0
     num_forfeited = 0
     
-    with mp.Pool(16) as pool:
-        result = pool.starmap(playWordle, zip([bestWord]*num_words, range(num_words)))
+    np.random.seed(0)
+    target_word_idx = np.random.choice(range(num_answers), size = min(num_words, num_answers), replace=False)
+
+    with mp.Pool(mp.cpu_count()) as pool:
+        result = pool.starmap(playWordle, zip([bestWord]*num_words, target_word_idx))
 
     num_guesses = [a["num_guesses"] for a in result]
 
