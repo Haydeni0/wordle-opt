@@ -1,3 +1,4 @@
+import multiprocessing as mp
 from debugpy import trace_this_thread
 import numpy as np
 from typing import Callable
@@ -49,10 +50,12 @@ def playWordle(bestWord: Callable, target_word_idx: int):
     banned_letters = set()
     banned_words = set()
     correct_letters = set()
+    correct_letter_locations = ['', '', '', '', '']
     num_guesses = 0
     guesses = []
     while True:
-        best_word = bestWord(banned_letters, banned_words, correct_letters)
+        best_word = bestWord(banned_letters, banned_words,
+                             correct_letters, correct_letter_locations)
         guesses.append(best_word)
         num_guesses = num_guesses + 1
 
@@ -67,6 +70,14 @@ def playWordle(bestWord: Callable, target_word_idx: int):
         banned_words = banned_words.union([best_word])
         correct_letters = correct_letters.union(result["correct_letters"])
 
+        new_cll = np.where(
+            (np.array(correct_letter_locations) == '') & (
+            np.array(result["correct_letter_locations"]) != ''))[0]
+        if len(new_cll) > 0:
+            for j in new_cll:
+                correct_letter_locations[j] = result["correct_letter_locations"][j]
+
+
     game_result = {"num_guesses": num_guesses, "guesses": guesses, "banned_letters": banned_letters,
                    "banned_words": banned_words, "correct_letters": correct_letters}
     return game_result
@@ -79,7 +90,9 @@ def algScoreSerial(bestWord, num_words=20):
     score = 0
     num_forfeited = 0
     np.random.seed(0)
-    target_word_idxs = np.random.choice(range(num_answers), size = min(num_words, num_answers), replace=False)
+    target_word_idxs = np.random.choice(
+        range(num_answers), size=min(num_words, num_answers), replace=False)
+    target_word_idxs = range(num_answers)
 
     for target_word_idx in target_word_idxs:
         result = playWordle(bestWord, target_word_idx)
@@ -90,8 +103,6 @@ def algScoreSerial(bestWord, num_words=20):
             score += result["num_guesses"]
     return score, num_forfeited
 
-import multiprocessing as mp
-
 
 def algScore(bestWord, num_words=20):
     # Play wordle with the chosen bestWord word choice algorithm
@@ -99,12 +110,14 @@ def algScore(bestWord, num_words=20):
 
     score = 0
     num_forfeited = 0
-    
+
     np.random.seed(0)
-    target_word_idx = np.random.choice(range(num_answers), size = min(num_words, num_answers), replace=False)
+    target_word_idx = np.random.choice(
+        range(num_answers), size=min(num_words, num_answers), replace=False)
 
     with mp.Pool(mp.cpu_count()) as pool:
-        result = pool.starmap(playWordle, zip([bestWord]*num_words, target_word_idx))
+        result = pool.starmap(playWordle, zip(
+            [bestWord]*num_words, target_word_idx))
 
     num_guesses = [a["num_guesses"] for a in result]
 
@@ -112,14 +125,13 @@ def algScore(bestWord, num_words=20):
         if num_guesses[j] > g_max_guesses:
             num_guesses[j] = 0
             num_forfeited += 1
-        
+
     score = sum(num_guesses)
     return score, num_forfeited
-
-        
 
 
 if __name__ == "__main__":
     target_word_idx = 1245
     print(f"{word_answers[target_word_idx]}")
-    wordle(target_word_idx, "medal")
+    result = wordle(target_word_idx, "medal")
+    pass
